@@ -1,0 +1,14 @@
+model_list:
+  - model_name: chat
+    litellm_params:
+      model: openai/chat
+      # Base URL of the LLM provider (e.g. OpenAI)
+      base_url: http://host.docker.internal:8033/v1/
+      api_key: "sk-none"
+      cache: true
+
+litellm_settings:
+  callbacks: ["litellm.remove_name_plugin.remove_name_handler_instance"]
+
+logging:
+  level: DEBUG

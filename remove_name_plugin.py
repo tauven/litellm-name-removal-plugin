@@ -1,0 +1,134 @@
+"""
+Remove Name Plugin for LiteLLM
+
+This plugin is designed to remove the 'name' attribute from all user messages
+before they are forwarded to LLM models. This addresses compatibility issues
+with various LLM providers that may not support or expect the 'name' field
+in the OpenAI chat format.
+
+The plugin works by intercepting requests before they are sent to the LLM
+and removing the 'name' field from user messages, ensuring consistent
+message formatting across different LLM providers.
+
+Compatibility Issues Addressed:
+- OpenAI's optional 'name' field for user messages
+- LLM providers that don't support the 'name' field
+- API error prevention when 'name' field is unexpected
+- Privacy considerations for sensitive user information
+
+Usage:
+To use this plugin, you need to add it to your LiteLLM configuration file (e.g., `litellm_config.yaml`).
+- Add this plugin to your LiteLLM configuration
+  litellm_config.yaml
+  '''
+    ...
+    litellm_settings:
+      callbacks: ["litellm.remove_name_plugin.remove_name_handler_instance"]
+    ...
+  '''
+- The plugin will automatically process all user messages
+- No manual intervention required
+
+"""
+from litellm.integrations.custom_logger import CustomLogger
+import litellm
+from litellm.proxy.proxy_server import UserAPIKeyAuth, DualCache
+from litellm.types.utils import ModelResponseStream
+from typing import Any, AsyncGenerator, Optional, Literal
+
+class RemoveNamePlugin(CustomLogger):
+    
+    def __init__(self):
+        """
+        Initialize the RemoveNamePlugin.
+        
+        Sets the plugin name for identification.
+        """
+        super().__init__()
+        self.name = "remove_name_plugin"
+    
+    async def async_pre_call_hook(
+        self, 
+        user_api_key_dict: UserAPIKeyAuth, 
+        cache: DualCache, 
+        data: dict, 
+        call_type: Literal[
+            "completion",
+            "text_completion"
+        ]
+    ) -> dict:
+        """
+        Remove 'name' attribute from user messages before sending to LLM.
+        
+        This hook processes the request payload and removes the 'name' field
+        from all user messages. It's called before the request is forwarded
+        to the LLM provider.
+        
+        Args:
+            user_api_key_dict (UserAPIKeyAuth): User API key authentication info
+            cache (DualCache): Cache instance
+            data (dict): The request payload data containing messages
+            call_type (Literal): Type of API call being made
+            
+        Returns:
+            dict: The modified data with 'name' field removed from user messages
+        """
+        try:
+            messages = data.get("messages")
+            
+            if not isinstance(messages, list):
+                return data
+            
+            modified_count = 0
+            for message in messages:
+                if isinstance(message, dict) and message.get("role") == "user" and "name" in message:
+                    message.pop("name", None)
+                    modified_count += 1
+            
+            return data
+            
+        except Exception as e:
+            return data
+    
+    async def async_post_call_failure_hook(
+        self, 
+        request_data: dict,
+        original_exception: Exception, 
+        user_api_key_dict: UserAPIKeyAuth,
+        traceback_str: Optional[str] = None,
+    ):
+        pass
+    
+    async def async_post_call_success_hook(
+        self,
+        data: dict,
+        user_api_key_dict: UserAPIKeyAuth,
+        response,
+    ):
+        pass
+    
+    async def async_moderation_hook(
+        self,
+        data: dict,
+        user_api_key_dict: UserAPIKeyAuth,
+        call_type: Literal["completion"],
+    ):
+        pass
+    
+    async def async_post_call_streaming_hook(
+        self,
+        user_api_key_dict: UserAPIKeyAuth,
+        response: str,
+    ):
+        pass
+    
+    async def async_post_call_streaming_iterator_hook(
+        self,
+        user_api_key_dict: UserAPIKeyAuth,
+        response: Any,
+        request_data: dict,
+    ) -> AsyncGenerator[ModelResponseStream, None]:
+        async for item in response:
+            yield item
+
+remove_name_handler_instance = RemoveNamePlugin()

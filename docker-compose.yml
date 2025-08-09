@@ -1,0 +1,15 @@
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: litellm
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/litellm_config.yaml
+      - ./remove_name_plugin.py:/app/litellm/remove_name_plugin.py
+    environment:
+      - PYTHONPATH=/app
+    working_dir: /app
+    command: |
+      --config /app/litellm_config.yaml --detailed_debug
+    restart: unless-stopped
