@@ -15,6 +15,16 @@ Content-Type: application/json
       "role": "user",
       "name": "John Doe",
       "content": "Hello, whats my Name?"
+    },
+    {
+      "role": "assistant",
+      "name": "Alan Assistant",
+      "content": "I I don't know."
+    },
+    {
+      "role": "user",
+      "name": "John Doe",
+      "content": "Are you sure?"
     }
   ]
 }
@@ -35,6 +45,16 @@ Content-Type: application/json
     {
       "role": "user",
       "content": "Hello, how can you help me today?"
+    },
+    {
+      "role": "assistant",
+      "name": "Alan Assistant",
+      "content": "I I don't know."
+    },
+    {
+      "role": "user",
+      "name": "John Doe",
+      "content": "Are you sure?"
     }
   ]
 }

@@ -1,7 +1,7 @@
 """
 Remove Name Plugin for LiteLLM
 
-This plugin is designed to remove the 'name' attribute from all user messages
+This plugin is designed to remove the 'name' attribute from all messages
 before they are forwarded to LLM models. This addresses compatibility issues
 with various LLM providers that may not support or expect the 'name' field
 in the OpenAI chat format.
@@ -30,13 +30,17 @@ To use this plugin, you need to add it to your LiteLLM configuration file (e.g.,
 - No manual intervention required
 
 """
-from litellm.integrations.custom_logger import CustomLogger
-import litellm
-from litellm.proxy.proxy_server import UserAPIKeyAuth, DualCache
-from litellm.types.utils import ModelResponseStream
 from typing import Any, AsyncGenerator, Optional, Literal
+from litellm.integrations.custom_logger import CustomLogger # pyright: ignore[reportMissingImports]
+from litellm.proxy.proxy_server import UserAPIKeyAuth, DualCache  # pyright: ignore[reportMissingImports]
+from litellm.types.utils import ModelResponseStream  # pyright: ignore[reportMissingImports]
 
+# pylint: disable=unused-argument
 class RemoveNamePlugin(CustomLogger):
+    """
+    A LiteLLM plugin to remove the 'name' parameter from the 'user' object
+    in the request body.
+    """
     
     def __init__(self):
         """
@@ -47,21 +51,23 @@ class RemoveNamePlugin(CustomLogger):
         super().__init__()
         self.name = "remove_name_plugin"
     
-    async def async_pre_call_hook(
-        self, 
-        user_api_key_dict: UserAPIKeyAuth, 
-        cache: DualCache, 
-        data: dict, 
-        call_type: Literal[
+    async def async_pre_call_hook(self, 
+            user_api_key_dict: UserAPIKeyAuth, 
+            cache: DualCache, data: dict,
+            call_type: Literal[
             "completion",
-            "text_completion"
+            "text_completion",
+            "embeddings",
+            "image_generation",
+            "moderation",
+            "audio_transcription",
         ]
     ) -> dict:
         """
         Remove 'name' attribute from user messages before sending to LLM.
         
         This hook processes the request payload and removes the 'name' field
-        from all user messages. It's called before the request is forwarded
+        from all messages. It's called before the request is forwarded
         to the LLM provider.
         
         Args:
@@ -81,7 +87,7 @@ class RemoveNamePlugin(CustomLogger):
             
             modified_count = 0
             for message in messages:
-                if isinstance(message, dict) and message.get("role") == "user" and "name" in message:
+                if isinstance(message, dict) and "name" in message:
                     message.pop("name", None)
                     modified_count += 1
             
